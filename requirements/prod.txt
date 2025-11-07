@@ -1,0 +1,4 @@
+-r base.txt
+
+# Production dependencies
+gunicorn>=21.2.0

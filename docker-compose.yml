@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  ai-assistant:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-assistant
+    ports:
+      - "8501:8501"
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - LOG_LEVEL=INFO
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - DEEPSEEK_BASE_URL=https://api.deepseek.com
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+      - ai-assistant-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - ai-assistant-network
+
+  # 可选：添加Redis作为缓存服务
+  redis:
+    image: redis:7-alpine
+    container_name: ai-assistant-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    networks:
+      - ai-assistant-network
+
+  # 可选：添加Nginx作为反向代理
+  nginx:
+    image: nginx:alpine
+    container_name: ai-assistant-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - ai-assistant
+    restart: unless-stopped
+    networks:
+      - ai-assistant-network
+    profiles:
+      - production
+
+volumes:
+  ai-assistant-data:
+    driver: local
+  redis-data:
+    driver: local
+
+networks:
+  ai-assistant-network:
+    driver: bridge

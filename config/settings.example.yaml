@@ -1,0 +1,71 @@
+# AI Assistant 配置文件模板
+# 复制此文件为 settings.yaml 并根据需要修改配置
+
+app:
+  name: "AI Assistant"
+  version: "1.0.0"
+  debug: false
+  host: "0.0.0.0"
+  port: 8501
+
+# DeepSeek API 配置
+api:
+  deepseek:
+    base_url: "https://api.deepseek.com"
+    timeout: 30
+    max_retries: 3
+    retry_delay: 1
+    model: "deepseek-chat"
+    max_tokens: 4096
+    temperature: 0.7
+
+# 日志配置
+logging:
+  level: "INFO"
+  format: "json"
+  file: "logs/app.log"
+  max_file_size: "10MB"
+  backup_count: 5
+  console_output: true
+
+# 服务配置
+services:
+  chat:
+    max_history_length: 20
+    default_temperature: 0.7
+    max_tokens: 2048
+
+  summary:
+    max_input_length: 10000
+    max_summary_length: 500
+    temperature: 0.3
+
+  translate:
+    max_text_length: 5000
+    supported_languages:
+      - "中文"
+      - "English"
+      - "日本語"
+      - "Español"
+      - "Français"
+      - "Deutsch"
+      - "한국어"
+
+# 安全配置
+security:
+  max_request_size: "10MB"
+  rate_limit:
+    requests_per_minute: 60
+    burst_size: 10
+
+# 缓存配置
+cache:
+  enabled: true
+  ttl: 3600  # 1小时
+  max_size: 1000
+
+# 性能配置
+performance:
+  connection_pool_size: 10
+  request_timeout: 30
+  max_concurrent_requests: 5
