@@ -40,6 +40,20 @@ class ChatCompletionRequest(BaseModel):
     stop: Optional[List[str]] = Field(None, description="停止词")
 
 
+class UsageDetails(BaseModel):
+    """使用统计详情模型"""
+    cached_tokens: Optional[int] = Field(None, description="缓存token数")
+
+
+class Usage(BaseModel):
+    """使用统计模型"""
+    prompt_tokens: int = Field(..., description="提示token数")
+    completion_tokens: int = Field(..., description="完成token数")
+    total_tokens: int = Field(..., description="总token数")
+    prompt_tokens_details: Optional[UsageDetails] = Field(None, description="提示token详情")
+    completion_tokens_details: Optional[UsageDetails] = Field(None, description="完成token详情")
+
+
 class ChatCompletionResponse(BaseModel):
     """聊天完成响应模型"""
     id: str = Field(..., description="响应ID")
@@ -47,7 +61,7 @@ class ChatCompletionResponse(BaseModel):
     created: int = Field(..., description="创建时间")
     model: str = Field(..., description="模型名称")
     choices: List[Dict[str, Any]] = Field(..., description="选择列表")
-    usage: Optional[Dict[str, int]] = Field(None, description="使用统计")
+    usage: Optional[Usage] = Field(None, description="使用统计")
 
 
 class DeepSeekClient:
