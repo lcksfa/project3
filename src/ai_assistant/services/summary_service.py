@@ -131,9 +131,9 @@ class SummaryService:
             with Timer(f"文本总结 {request_id}"):
                 # 检查文本是否需要分段处理
                 if len(text) > 8000:  # 如果文本过长，分段处理
-                    summary = await self._summarize_long_text(request, request_id)
+                    summary = await self._summarize_long_text(request, request_id, temperature)
                 else:
-                    summary = await self._summarize_single_text(request, request_id)
+                    summary = await self._summarize_single_text(request, request_id, temperature)
 
                 self.logger.info(
                     "文本总结完成",
@@ -152,7 +152,7 @@ class SummaryService:
             )
             raise ServiceError(f"文本总结失败: {e}")
 
-    async def _summarize_single_text(self, request: SummaryRequest, request_id: str) -> str:
+    async def _summarize_single_text(self, request: SummaryRequest, request_id: str, temperature: Optional[float] = None) -> str:
         """处理单个文本的总结"""
         # 生成系统提示
         system_prompt = self.prompts[request.summary_type](request)
@@ -167,7 +167,7 @@ class SummaryService:
         api_request = ChatCompletionRequest(
             model=self.settings.deepseek.model,
             messages=messages,
-            temperature=temperature or self.settings.services.temperature,
+            temperature=temperature or self.settings.services.summary.temperature,
             max_tokens=request.max_length or self.settings.services.max_summary_length
         )
 
@@ -179,7 +179,7 @@ class SummaryService:
 
         return response.choices[0]["message"]["content"].strip()
 
-    async def _summarize_long_text(self, request: SummaryRequest, request_id: str) -> str:
+    async def _summarize_long_text(self, request: SummaryRequest, request_id: str, temperature: Optional[float] = None) -> str:
         """处理长文本的总结"""
         self.logger.info(
             "开始分段总结长文本",
@@ -206,7 +206,7 @@ class SummaryService:
                 focus_areas=request.focus_areas
             )
 
-            chunk_summary = await self._summarize_single_text(chunk_request, f"{request_id}_chunk_{i}")
+            chunk_summary = await self._summarize_single_text(chunk_request, f"{request_id}_chunk_{i}", temperature)
             summaries.append(chunk_summary)
 
             # 添加延迟以避免API限制
@@ -224,7 +224,7 @@ class SummaryService:
                 language=request.language,
                 focus_areas=request.focus_areas
             )
-            return await self._summarize_single_text(final_request, f"{request_id}_final")
+            return await self._summarize_single_text(final_request, f"{request_id}_final", temperature)
 
         return combined_summary
 

@@ -221,7 +221,7 @@ class TranslationService:
         api_request = ChatCompletionRequest(
             model=self.settings.deepseek.model,
             messages=messages,
-            temperature=temperature or self.settings.services.temperature,
+            temperature=temperature or self.settings.services.default_temperature,
             max_tokens=self.settings.services.max_tokens
         )
 
