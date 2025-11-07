@@ -9,7 +9,8 @@ from typing import Dict, List, Optional, Any, AsyncGenerator
 import httpx
 from pydantic import BaseModel, Field
 
-from ..core.config import get_settings, DeepSeekSettings
+from ..core.config_simple import get_settings
+from ..core.config_adapter import DeepSeekConfig as DeepSeekSettings
 from ..core.logger import get_logger
 from ..core.exceptions import (
     APIError, AuthenticationError, RateLimitError,

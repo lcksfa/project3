@@ -18,6 +18,86 @@ class AppConfig:
         self.debug = debug
 
 
+class DeepSeekConfig:
+    """DeepSeek配置类"""
+    def __init__(self, api_key: str, base_url: str, model: str, temperature: float,
+                 max_tokens: int, timeout: int, max_retries: int, retry_delay: int):
+        self.api_key = api_key
+        self.base_url = base_url
+        self.model = model
+        self.temperature = temperature
+        self.max_tokens = max_tokens
+        self.timeout = timeout
+        self.max_retries = max_retries
+        self.retry_delay = retry_delay
+
+
+class ChatConfig:
+    """聊天配置类"""
+    def __init__(self, max_history_length: int, default_temperature: float, max_tokens: int):
+        self.max_history_length = max_history_length
+        self.default_temperature = default_temperature
+        self.max_tokens = max_tokens
+
+
+class SummaryConfig:
+    """总结配置类"""
+    def __init__(self, max_input_length: int, max_summary_length: int, temperature: float):
+        self.max_input_length = max_input_length
+        self.max_summary_length = max_summary_length
+        self.temperature = temperature
+
+
+class TranslateConfig:
+    """翻译配置类"""
+    def __init__(self, max_text_length: int, supported_languages: list):
+        self.max_text_length = max_text_length
+        self.supported_languages = supported_languages
+
+
+class ServicesConfig:
+    """服务配置类（兼容性）"""
+    def __init__(self, chat: ChatConfig, summary: SummaryConfig, translate: TranslateConfig):
+        self.chat = chat
+        self.summary = summary
+        self.translate = translate
+
+    @property
+    def max_history_length(self) -> int:
+        """获取聊天历史最大长度"""
+        return self.chat.max_history_length
+
+    @property
+    def max_input_length(self) -> int:
+        """获取输入最大长度（使用总结服务的配置）"""
+        return self.summary.max_input_length
+
+    @property
+    def max_summary_length(self) -> int:
+        """获取总结最大长度"""
+        return self.summary.max_summary_length
+
+    @property
+    def max_text_length(self) -> int:
+        """获取翻译文本最大长度"""
+        return self.translate.max_text_length
+
+    @property
+    def temperature(self) -> float:
+        """获取默认温度（使用聊天的默认温度）"""
+        return self.chat.default_temperature
+
+    @property
+    def default_temperature(self) -> float:
+        """获取默认温度"""
+        return self.chat.default_temperature
+
+    @property
+    def max_tokens(self) -> int:
+        """获取最大token数（使用聊天的配置）"""
+        return self.chat.max_tokens
+
+
 class LoggingConfig:
     """日志配置类"""
     def __init__(self, level: str, format: str, file: str, max_file_size: str,
@@ -54,6 +134,62 @@ class SimpleSettings(BaseSettings):
 
     # 安全配置
     secret_key: str = "development_secret_key"
+
+    # 动态配置缓存
+    _deepseek_config: Optional["DeepSeekConfig"] = None
+    _services_config: Optional["ServicesConfig"] = None
+
+    @property
+    def services(self) -> "ServicesConfig":
+        """获取服务配置对象（兼容性）"""
+        if self._services_config is None:
+            self._services_config = ServicesConfig(
+                chat=ChatConfig(
+                    max_history_length=20,
+                    default_temperature=0.7,
+                    max_tokens=2048
+                ),
+                summary=SummaryConfig(
+                    max_input_length=10000,
+                    max_summary_length=500,
+                    temperature=0.3
+                ),
+                translate=TranslateConfig(
+                    max_text_length=5000,
+                    supported_languages=[
+                        "中文", "English", "日本語", "Español", "Français",
+                        "Deutsch", "한국어"
+                    ]
+                )
+            )
+        return self._services_config
+
+    @property
+    def deepseek(self) -> "DeepSeekConfig":
+        """获取DeepSeek配置对象（兼容性）"""
+        if self._deepseek_config is None:
+            self._deepseek_config = DeepSeekConfig(
+                api_key=self.deepseek_api_key,
+                base_url=self.deepseek_base_url,
+                model=self.deepseek_model,
+                temperature=self.deepseek_temperature,
+                max_tokens=self.deepseek_max_tokens,
+                timeout=30,
+                max_retries=3,
+                retry_delay=1
+            )
+        return self._deepseek_config
+
+    @deepseek.setter
+    def deepseek(self, value: "DeepSeekConfig"):
+        """设置DeepSeek配置对象"""
+        self._deepseek_config = value
+        # 同时更新底层配置
+        self.deepseek_api_key = value.api_key
+        self.deepseek_base_url = value.base_url
+        self.deepseek_model = value.model
+        self.deepseek_temperature = value.temperature
+        self.deepseek_max_tokens = value.max_tokens
 
     @property
     def app(self) -> "AppConfig":

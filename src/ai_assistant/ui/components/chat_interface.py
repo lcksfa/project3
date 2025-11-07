@@ -90,7 +90,7 @@ class ChatInterface:
             max_value=4096,
             value=st.session_state.chat_settings['max_tokens'],
             step=100,
-            help_text="限制AI回复的最大长度"
+            help="限制AI回复的最大长度"
         )
         st.session_state.chat_settings['max_tokens'] = max_tokens
 
@@ -98,7 +98,7 @@ class ChatInterface:
         stream_output = st.sidebar.checkbox(
             "流式输出",
             value=st.session_state.chat_settings['stream'],
-            help_text="实时显示AI回复过程"
+            help="实时显示AI回复过程"
         )
         st.session_state.chat_settings['stream'] = stream_output
 
@@ -108,7 +108,7 @@ class ChatInterface:
             "系统提示",
             value=self._get_current_system_message(),
             height=100,
-            help_text="设置AI助手的角色和行为"
+            help="设置AI助手的角色和行为"
         )
 
         if st.sidebar.button("应用系统消息"):
@@ -254,24 +254,19 @@ class ChatInterface:
         st.session_state.chat_messages.append(ai_message)
         st.rerun()
 
-    def _stream_response(self, user_input: str, settings: Dict):
-        """流式生成回复"""
+    async def _async_stream_response(self, user_input: str, settings: Dict):
+        """异步流式生成回复"""
         # 创建临时消息容器
         message_placeholder = st.empty()
         full_response = ""
 
         # 流式生成回复
-        response_stream = asyncio.run(
-            self.chat_service.chat_stream(
-                message=user_input,
-                session_id=st.session_state.current_session_id,
-                temperature=settings['temperature'],
-                max_tokens=settings['max_tokens']
-            )
-        )
-
-        # 实时显示回复
-        for chunk in response_stream:
+        async for chunk in self.chat_service.chat_stream(
+            message=user_input,
+            session_id=st.session_state.current_session_id,
+            temperature=settings['temperature'],
+            max_tokens=settings['max_tokens']
+        ):
             full_response += chunk
             message_placeholder.markdown(f"""
             <div style="background-color: #f5f5f5; padding: 1rem; border-radius: 0.5rem; max-width: 80%;">
@@ -297,6 +292,11 @@ class ChatInterface:
             'timestamp': time.strftime('%H:%M:%S')
         }
         st.session_state.chat_messages.append(ai_message)
+
+    def _stream_response(self, user_input: str, settings: Dict):
+        """流式生成回复"""
+        # 使用 asyncio.run 运行异步函数
+        asyncio.run(self._async_stream_response(user_input, settings))
 
     def _regenerate_response(self, message_index: int):
         """重新生成回复"""

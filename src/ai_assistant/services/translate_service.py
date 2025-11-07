@@ -9,7 +9,7 @@ from enum import Enum
 import asyncio
 
 from .deepseek_client import DeepSeekClient, Message, ChatCompletionRequest
-from ..core.config import get_settings
+from ..core.config_simple import get_settings
 from ..core.logger import get_logger
 from ..core.exceptions import ValidationError, ServiceError
 from ..utils.validators import validate_text_input, validate_temperature, validate_language_code
