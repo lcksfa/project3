@@ -184,9 +184,9 @@ class TranslationService:
             with Timer(f"文本翻译 {request_id}"):
                 # 检查文本是否需要分段处理
                 if len(text) > 4000:  # 如果文本过长，分段处理
-                    translation = await self._translate_long_text(request, request_id)
+                    translation = await self._translate_long_text(request, request_id, temperature)
                 else:
-                    translation = await self._translate_single_text(request, request_id)
+                    translation = await self._translate_single_text(request, request_id, temperature)
 
                 self.logger.info(
                     "文本翻译完成",
@@ -205,7 +205,7 @@ class TranslationService:
             )
             raise ServiceError(f"文本翻译失败: {e}")
 
-    async def _translate_single_text(self, request: TranslationRequest, request_id: str) -> str:
+    async def _translate_single_text(self, request: TranslationRequest, request_id: str, temperature: Optional[float] = None) -> str:
         """处理单个文本的翻译"""
         # 生成系统提示
         system_prompt = self._get_translation_prompt(request)
@@ -239,7 +239,7 @@ class TranslationService:
 
         return translation
 
-    async def _translate_long_text(self, request: TranslationRequest, request_id: str) -> str:
+    async def _translate_long_text(self, request: TranslationRequest, request_id: str, temperature: Optional[float] = None) -> str:
         """处理长文本的翻译"""
         self.logger.info(
             "开始分段翻译长文本",
@@ -268,7 +268,7 @@ class TranslationService:
             )
 
             segment_translation = await self._translate_single_text(
-                segment_request, f"{request_id}_segment_{i}"
+                segment_request, f"{request_id}_segment_{i}", temperature
             )
             translations.append(segment_translation)
 
