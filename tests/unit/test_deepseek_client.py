@@ -71,9 +71,17 @@ class TestDeepSeekClient:
     """DeepSeek客户端测试"""
 
     @pytest.fixture
-    def client(self, mock_deepseek_settings):
+    def client(self):
         """创建客户端实例"""
-        return DeepSeekClient(mock_deepseek_settings)
+        from ai_assistant.core.config_simple import SimpleSettings
+        settings = SimpleSettings(
+            deepseek_api_key="test_key",
+            deepseek_base_url="https://api.test.com",
+            deepseek_model="test-model",
+            deepseek_temperature=0.7,
+            deepseek_max_tokens=2048
+        )
+        return DeepSeekClient(settings)
 
     @pytest.fixture
     def mock_httpx_client(self):
@@ -312,8 +320,13 @@ class TestDeepSeekClient:
             # 验证客户端被关闭
             mock_httpx_client.aclose.assert_called_once()
 
-    def test_client_initialization(self, mock_deepseek_settings):
+    def test_client_initialization(self):
         """测试客户端初始化"""
-        client = DeepSeekClient(mock_deepseek_settings)
-        assert client.config == mock_deepseek_settings
+        from ai_assistant.core.config_simple import SimpleSettings
+        settings = SimpleSettings(
+            deepseek_api_key="test_key",
+            deepseek_base_url="https://api.test.com"
+        )
+        client = DeepSeekClient(settings)
+        assert client.settings == settings
         assert client._client is None
